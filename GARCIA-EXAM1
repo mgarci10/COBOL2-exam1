@@ -1,0 +1,129 @@
+      ******************************************************************
+      * PROGRAM : EXAN 1                                      *
+      * AUTHOR  : MARIO GARCIA                                         *
+      * DUE DATE: 02/27/2022                                           *
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. GARCIA-EXAM1.
+      *************************************************************
+       ENVIRONMENT DIVISION.
+      *************************************************************
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      * 01 WS-CODE-TABLE.
+       01 WS-INFO-TABLE-1 OCCURS 5 TIMES INDEXED BY CNTR-1.
+              03 WS-CODE      PIC XXX.
+
+      * 01 WS-RATE-TABLE.
+       01 WS-INFO-TABLE-2 OCCURS 5 TIMES INDEXED BY CNTR-2.
+              03 WS-RATE      PIC 9(3)V9(4).
+
+       01 WS-CONVERSION.
+           03 WS-CODE-SRCH      PIC XXX VALUE SPACES.
+           03 WS-AMT-INPUT      PIC 9(3)V9(2) VALUE ZEROS.
+           03 WS-CONVERTED      PIC 9(3)V9(2) VALUE ZEROS.
+
+       01 WS-FLAG.
+           03 WS-RATES-PUT      PIC X VALUE 'N'.
+                      88 RATES-PUT    VALUE 'Y'.
+           03 WS-CODE-CHECK    PIC X  VALUE 'N'.
+                      88 CODE-EXISTS  VALUE 'N'.
+
+       01 WS-SCRN-CTL.
+           03 WS-EXIT           PIC XXX VALUE SPACE.
+
+       01 MISC.
+           03 IND               PIC 99 VALUE ZEROS.
+           03 TEMP-RATE         PIC 9(3)V9(4).
+
+       SCREEN SECTION.
+
+       01 SCRN-EXCHANGE-RATES.
+             03 SCRN-INPUT-RATES.
+                05 BLANK SCREEN.
+                05 LINE 01 COL 01 VALUE 'LOAD EXCHANGE RATES'.
+                05 SCRN-RATES-1.
+                        07 LINE 08 COL 11 VALUE 'COUNTRY CODE: '.
+                        07         COL 26 PIC XXX TO
+                        WS-INFO-TABLE-1(IND).
+
+                05  SCRN-RATES-2.
+                        07 LINE 08 COL 30 VALUE
+                                'NUMBER TO A U.S. DOLLAR: '.
+                        07         COL 58 PIC ZZ9.9999 TO
+                                WS-INFO-TABLE-2(IND).
+       01 SCRN-CONVERT.
+             03 LINE 01 COL 01 VALUE 'CONVERT CURRENCY'.
+             03 SCRN-CONV-CODE.
+                05 LINE 08 COL 01 VALUE 'COUNTRY CODE: '.
+                05         COL 26 PIC XXX TO WS-CODE-SRCH.
+             03 SCRN-CONV-AMT.
+                05 LINE 08 COL 30 VALUE 'AMOUNT: '.
+                05         COL 42 PIC Z.99 TO WS-AMT-INPUT.
+
+       01 SCRN-ANSWER.
+             03 LINE 08 COL 1 VALUE "U.S. DOLLAR AMOUNT".
+             03         COL 32 PIC $ZZ9.99 FROM WS-CONVERTED.
+       01 SCRN-DECLINE.
+             03  LINE 08 COL 1 VALUE "CODE NOT IN TABLE".
+       01  SCRN-EXIT-OPTION.
+           03  LINE 12     COL 1 VALUE
+                   'MORE DATA? (YES OR NO):'.
+           03         COL 28 PIC XXX TO WS-EXIT     AUTO.
+       01  SCRN-RESET.
+           03  LINE 08 COL  1 ERASE EOS.
+       01  SCRN-CLOSING.
+           03  BLANK SCREEN.
+           03  LINE 25 COL  1 VALUE SPACES.
+
+      *************************************************************
+
+       PROCEDURE DIVISION.
+       100-MAIN.
+           SET CNTR-1 TO ZERO
+
+           PERFORM VARYING CNTR-1 FROM 1 BY 1
+                UNTIL CNTR-1 > 5
+                MOVE CNTR-1 TO IND
+                DISPLAY SCRN-EXCHANGE-RATES
+                ACCEPT SCRN-RATES-1
+                ACCEPT SCRN-RATES-2
+                DISPLAY SCRN-RESET
+           END-PERFORM
+
+           PERFORM UNTIL WS-EXIT EQUALS 'NO' OR 'no'
+                DISPLAY SCRN-CONVERT
+                ACCEPT SCRN-CONV-CODE
+                ACCEPT SCRN-CONV-AMT
+
+                PERFORM 200-CALC-CURR
+
+                IF WS-CODE-CHECK = 'N'
+                        DISPLAY SCRN-DECLINE
+                        MOVE 'Y' TO WS-CODE-CHECK
+                ELSE
+                        DISPLAY SCRN-ANSWER
+                END-IF
+
+                DISPLAY SCRN-EXIT-OPTION
+                ACCEPT SCRN-EXIT-OPTION
+                DISPLAY SCRN-RESET
+           END-PERFORM.
+           DISPLAY SCRN-CLOSING.
+           STOP RUN.
+
+      *************************************************************
+       200-CALC-CURR.
+           SET CNTR-1 TO ZERO
+
+           SEARCH WS-INFO-TABLE-1 VARYING CNTR-1
+                AT END SET CNTR-1 TO ZERO
+                WHEN WS-INFO-TABLE-1(CNTR-1) = WS-CODE-SRCH
+                        MOVE 'Y' TO WS-CODE-CHECK
+                        MOVE WS-INFO-TABLE-2(CNTR-1) TO TEMP-RATE
+
+                        COMPUTE WS-CONVERTED ROUNDED =
+                        WS-AMT-INPUT * TEMP-RATE
+
+           END-SEARCH.
